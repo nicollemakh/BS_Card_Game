@@ -158,14 +158,13 @@ function handleNext() {
 
 // === AI turn logic ===
 function aiTakeTurn() {
-  const aiHand = hands[currentPlayer];
+  const aiHand = hands[player];
   const currentCard = CARD_VALUES[turnCount % CARD_VALUES.length];
 
   const playHonestly = Math.random() < 0.6;
   const matchingCards = aiHand.hand.filter(card => card.value === currentCard);
   let cardsToPlay: Card[] = [];
 
-  // AI decides whether to lie
   if (playHonestly && matchingCards.length > 0) {
     cardsToPlay = matchingCards.slice(0, 4);
   } else {
@@ -175,27 +174,31 @@ function aiTakeTurn() {
   const indices = cardsToPlay.map(card => aiHand.hand.indexOf(card));
   const played = aiHand.playCards(indices);
   lastPlayedCards = played;
-  lastPlayer = currentPlayer;
+  lastPlayer = player;
   lastDeclaredValue = currentCard;
 
-  playedArea.innerHTML = `Player ${currentPlayer} (AI) declared ${played.length} ${lastDeclaredValue}(s)`;
+  playedArea.innerHTML = `Player ${player} (AI) declared ${played.length} ${lastDeclaredValue}(s)`;
 
-  currentPlayer = (currentPlayer + 1) % numPlayers;
-  turnCount++;
+  // Update currentPlayer and turnCount here only after the AI turn ends:
+  if (player === currentPlayer) {
+    currentPlayer = (currentPlayer + 1) % numPlayers;
+    turnCount++;
+  }
+
   renderHand();
 
   setTimeout(() => {
     if (aiPlayers.has(currentPlayer)) {
-      maybeAIcallsBS();
-      setTimeout(() => aiTakeTurn(), 1000);
+      maybeAIcallsBS(currentPlayer);
+      setTimeout(() => aiTakeTurn(currentPlayer), 1000);
     }
   }, 1000);
 }
 
 // === AI randomly decides to call BS ===
 function maybeAIcallsBS() {
-  const challenger = currentPlayer;
-  const target = (currentPlayer - 1 + numPlayers) % numPlayers;
+  const challenger = player;
+  const target = (challenger - 1 + numPlayers) % numPlayers;
 
   if (lastPlayedCards.length > 0 && aiPlayers.has(challenger) && Math.random() < 0.3) {
     bsResult.textContent = `AI Player ${challenger} calls BS on Player ${target}!`;
@@ -206,9 +209,12 @@ function maybeAIcallsBS() {
 // === Checks if AI should go next ===
 function maybeTriggerAITurn() {
   if (aiPlayers.has(currentPlayer)) {
+    const playerAtCall = currentPlayer; // lock current player index here
     setTimeout(() => {
-      maybeAIcallsBS();
-      setTimeout(() => aiTakeTurn(), 1000);
+      if (aiPlayers.has(playerAtCall)) maybeAIcallsBS(playerAtCall);
+      setTimeout(() => {
+        if (aiPlayers.has(playerAtCall)) aiTakeTurn(playerAtCall);
+      }, 1000);
     }, 1000);
   }
 }
