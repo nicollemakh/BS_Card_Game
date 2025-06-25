@@ -99,7 +99,7 @@ function handlePlay() {
   const playedCards = hands[currentPlayer].playCards(selectedIndices);
   lastPlayedCards = playedCards;
 
-  // Check if current player has emptied their hand — if yes, announce winner and stop
+  // Check for winner and end game if found
   if (checkWinner()) {
     return;
   }
@@ -222,15 +222,20 @@ function maybeTriggerAITurn() {
   }
 }
 // === Check's if Someone Won ===
-function checkWinner() {
+function checkWinner(): boolean {
   for (let i = 0; i < numPlayers; i++) {
     if (hands[i].hand.length === 0) {
       alert(`Player ${i} wins! 🎉`);
-      // Optionally reset or stop the game here
-      return true;
+      
+      // Disable buttons to end game
+      playButton.disabled = true;
+      bsButton.disabled = true;
+      nextButton.disabled = true;
+      
+      return true;  // winner found
     }
   }
-  return false;
+  return false; // no winner yet
 }
 
 // === Start the game and wire up controls ===
