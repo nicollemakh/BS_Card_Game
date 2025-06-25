@@ -91,14 +91,15 @@ function handlePlay() {
   lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
   playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
-  // === WIN CHECK: Immediately after playing cards ===
+  // *** IMMEDIATE WIN CHECK ***
+  console.log(`DEBUG: Player ${currentPlayer} hand length:`, hands[currentPlayer].hand.length);
   if (hands[currentPlayer].hand.length === 0) {
     alert(`Player ${currentPlayer} wins! 🎉`);
     playButton.disabled = true;
     bsButton.disabled = true;
     nextButton.disabled = true;
     gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉`;
-    return;
+    return; // Stop further play
   }
 
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
@@ -157,7 +158,8 @@ function aiTakeTurn() {
 
   playedArea.textContent = `AI Player ${currentPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
-  // === WIN CHECK: Immediately after AI plays cards ===
+  // *** IMMEDIATE WIN CHECK ***
+  console.log(`DEBUG: AI Player ${currentPlayer} hand length:`, hand.hand.length);
   if (hand.hand.length === 0) {
     alert(`Player ${currentPlayer} wins! 🎉`);
     playButton.disabled = true;
