@@ -1,4 +1,3 @@
-console.log("🎮 BS Game script loaded");
 // === Imports ===
 import { Card } from "./Card.js";
 import { Hand } from "./Hand.js";
@@ -20,7 +19,6 @@ let lastDeclaredValue = "";
 // === UI Elements ===
 const handDisplay = document.getElementById("hand-display")!;
 const playButton = document.getElementById("play-button")!;
-console.log("playButton is:", playButton);
 const bsButton = document.getElementById("bs-button")!;
 const nextButton = document.getElementById("next-button")!;
 const playedArea = document.getElementById("played-cards")!;
@@ -44,8 +42,18 @@ function setupGame() {
   }
   deck.dealHands(numPlayers, hands);
 
+  skipEmptyHands();
   renderHand();
   maybeTriggerAITurn();
+}
+
+// === Skip Players With No Cards ===
+function skipEmptyHands() {
+  let tries = 0;
+  while (hands[currentPlayer].hand.length === 0 && tries < numPlayers) {
+    currentPlayer = (currentPlayer + 1) % numPlayers;
+    tries++;
+  }
 }
 
 // === Render Current Hand ===
@@ -86,7 +94,6 @@ function renderHand() {
 function handlePlay() {
   console.log("handlePlay triggered");
 
-  // 1. Log which cards are selected by the user (indices)
   const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
   const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
   console.log("Selected indices:", selectedIndices);
@@ -96,34 +103,21 @@ function handlePlay() {
     return alert("Select at least one card.");
   }
 
-  // 2. Before playing cards, log current hand for this player
   console.log("Hand before play:", hands[currentPlayer].hand.map(c => c.toString()));
 
-  // 3. Remove cards from hand
   lastPlayer = currentPlayer;
   lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
 
-  // 4. After playing cards, log updated hand to confirm removal
   console.log("Hand after play:", hands[currentPlayer].hand.map(c => c.toString()));
 
   lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
   playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
-  // 5. Check if player has emptied their hand and won
-  if (hands[currentPlayer].hand.length === 0) {
-    console.log(`Player ${currentPlayer} wins!`);
-    gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉 (alert replaced)`;
-    alert(`Player ${currentPlayer} wins! 🎉`);
-    playButton.disabled = true;
-    bsButton.disabled = true;
-    nextButton.disabled = true;
-    return;
-  }
-
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
   bsResult.textContent = "";
 
   currentPlayer = (currentPlayer + 1) % numPlayers;
+  skipEmptyHands();
   turnCount++;
   renderHand();
   maybeTriggerAITurn();
@@ -135,6 +129,7 @@ function handleBS() {
     bsResult.textContent = "No cards to call BS on!";
     return;
   }
+
   const isLie = lastPlayedCards.some(card => card.value !== lastDeclaredValue);
 
   if (isLie) {
@@ -148,9 +143,8 @@ function handleBS() {
   lastPlayedCards = [];
   playedArea.textContent = "";
 
-  if (checkWinner()) return;
-
   currentPlayer = (currentPlayer + 1) % numPlayers;
+  skipEmptyHands();
   turnCount++;
   renderHand();
   maybeTriggerAITurn();
@@ -176,17 +170,8 @@ function aiTakeTurn() {
 
   playedArea.textContent = `AI Player ${currentPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
-  // Check winner before moving to next player
-  if (hand.hand.length === 0) {
-    alert(`Player ${currentPlayer} wins! 🎉`);
-    playButton.disabled = true;
-    bsButton.disabled = true;
-    nextButton.disabled = true;
-    gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉`;
-    return;
-  }
-
   currentPlayer = (currentPlayer + 1) % numPlayers;
+  skipEmptyHands();
   turnCount++;
   renderHand();
   maybeTriggerAITurn();
@@ -212,24 +197,10 @@ function maybeTriggerAITurn() {
   }
 }
 
-// === Check For Winner ===
-function checkWinner(): boolean {
-  for (let i = 0; i < numPlayers; i++) {
-    if (hands[i].hand.length === 0) {
-      alert(`Player ${i} wins! 🎉`);
-      playButton.disabled = true;
-      bsButton.disabled = true;
-      nextButton.disabled = true;
-      gameStatus.textContent = `Game Over — Player ${i} wins! 🎉`;
-      return true;
-    }
-  }
-  return false;
-}
-
-// === Next Button ===
+// === Handle Next Button ===
 function handleNext() {
   currentPlayer = (currentPlayer + 1) % numPlayers;
+  skipEmptyHands();
   playedArea.textContent = "";
   bsResult.textContent = "";
   renderHand();
