@@ -40,7 +40,7 @@ function setupGame() {
 }
 // === Skip Players With No Cards ===
 function skipEmptyHands() {
-    
+    console.log("emptyhands");
     let tries = 0;
     while (hands[currentPlayer].hand.length === 0 && tries < numPlayers) {
         console.log("Hello emptyHands- inside");
@@ -50,10 +50,10 @@ function skipEmptyHands() {
 }
 // check for end game
 function checkForGameEnd() {
-  
+    console.log("checkEndGame");
     const playersWithCards = hands.filter(hand => hand.hand.length > 0);
     if (playersWithCards.length <= 1) {
-  
+        console.log("lessthan 1 end game");
         const remainingPlayerIndex = hands.findIndex(hand => hand.hand.length > 0);
         const msg = playersWithCards.length === 1
             ? `Game Over — Player ${remainingPlayerIndex} is the last one with cards!`
@@ -99,7 +99,7 @@ function renderHand() {
 }
 // === Handle Play Button ===
 function handlePlay() {
-    
+    console.log("handleplay");
     const selectedButtons = handDisplay.querySelectorAll(".card.selected");
     const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index));
     if (selectedIndices.length === 0) {
@@ -113,6 +113,7 @@ function handlePlay() {
     selectedButtons.forEach(btn => btn.classList.remove("selected"));
     bsResult.textContent = "";
     if (checkForGameEnd())
+        console.log("handleplay + endgame");
         return;
     currentPlayer = (currentPlayer + 1) % numPlayers;
     skipEmptyHands();
