@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BS Card Game</title>
+  <style>
+  body {
+      font-family: 'Bungee', cursive;
+      padding: 20px;
+      background-color: #121212;
+      color: #f0f0f0;
+      text-align: center;
+      font-size: 40px;
+    }
+    h1 {
+      font-family: 'Bungee', cursive;
+      font-size: 6rem;
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+      margin-bottom: 30px;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+    .player-section {
+      margin-bottom: 30px;
+    }
+    .card {
+      display: inline-flex;
+      justify-content: center; /* center horizontally */
+      align-items: center;     /* center vertically */
+      width: 90px;
+      height: 140px;
+      margin: 5px;
+      padding: 0;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      background-color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 40px;  /* bigger text */
+      user-select: none;
+      position: relative;
+      text-align: center;
+    }
+    .card.red {
+      color: red;
+    }
+    .card.black {
+      color: black;
+    }
+    .card input {
+      margin-right: 5px;
+    }
+    .section-title {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      color: #ffee58;
+    }
+    .card.selected {
+      box-shadow: 0 0 10px 3px gold;
+      border-color: gold;
+      transform: scale(1.1);
+    }
+    #play-button, #next-button, #bs-button {
+      font-family: 'Bungee', cursive;
+      font-size: 2rem;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    #rules-button{
+      font-family: 'Bungee', cursive;
+      font-size: 1rem;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #f7f6a0, #f1de03);
+      color: rgb(232, 49, 180);
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    #play-button:hover, #next-button:hover, #bs-button:hover {
+      background: linear-gradient(90deg, #0072ff, #00c6ff);
+    }
+    #played-cards, #game-status {
+      margin-top: 25px;
+      font-size: 2rem;
+      color: #d8bf34;
+    }
+  </style>
+</head>
+<body>
+  <h1>BS Card Game</h1>
+
+  <div class="player-section">
+    <div class="section-title">Current Player's Hand</div>
+    <div id="hand-display"></div>
+  </div>
+
+  <button id="play-button">Play Selected Cards</button>
+  <button id="bs-button">Call BS</button>
+  <button id="next-button">Next Player</button>
+  <button id="rules-button">Show Rules</button>
+
+  <div id="rules-modal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:#222; padding:20px; border-radius:10px; border:2px solid gold; color:white; max-width: 400px; z-index:100;font-size: 20px;">
+    <h2>📜 BS Game Rules</h2>
+    <ul style="text-align:left; line-height:1.5;">
+      <li>PLayer 1 = AI Player.</li>
+      <li>Try to get rid of all your cards.</li>
+      <li>Each round, play 1–4 cards and say what value they are.</li>
+      <li>You can lie about the value.</li>
+      <li>Others may call "BS" if they think you're lying.</li>
+      <li>If you lied, you pick up all played cards.</li>
+      <li>If you told the truth, the challenger picks up the pile.</li>
+      <li>Card values cycle from A → K → A → ...</li>
+      <li>First to empty their hand wins.</li>
+    </ul>
+    <button id="close-rules" style="margin-top:10px;">Close</button>
+  </div>
+
+  <div id="played-cards"></div>
+  <div id="bs-result"></div>
+  <div id="game-status"></div>
+
+  <script type="module" src="./dist/main.js"></script>
+</body>
+</html>
