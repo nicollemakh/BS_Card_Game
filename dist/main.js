@@ -1,56 +1,83 @@
 import { Hand } from "./Hand.js";
 import { Deck } from "./Deck.js";
 import { CARD_VALUES } from "./constants.js";
-// === Game state ===
-let turnCount = 0; // Tracks current turn number (used to cycle declared values)
-const numPlayers = 4; // Total number of players
-const hands = []; // Array of player hands
-const aiPlayers = new Set([1]); // Set of AI player indices
+// === Game State ===
+let turnCount = 0;
+const numPlayers = 4;
+const hands = [];
+const aiPlayers = new Set([1]); // Only Player 1 is AI
 let deck;
-let currentPlayer = 0; // Index of player whose turn it is
-let lastPlayedCards = []; // Stores last played cards (to check for BS)
-let lastPlayer = -1; // Player who just played
-let lastDeclaredValue = ""; // What the last player claimed they played
-// === Rule modal elements ===
+let currentPlayer = 0;
+let lastPlayedCards = [];
+let lastPlayer = -1;
+let lastDeclaredValue = "";
+// === UI Elements ===
+const handDisplay = document.getElementById("hand-display");
+const playButton = document.getElementById("play-button");
+const bsButton = document.getElementById("bs-button");
+const nextButton = document.getElementById("next-button");
+const playedArea = document.getElementById("played-cards");
+const bsResult = document.getElementById("bs-result");
+const gameStatus = document.getElementById("game-status");
 const rulesButton = document.getElementById("rules-button");
 const rulesModal = document.getElementById("rules-modal");
 const closeRules = document.getElementById("close-rules");
+// === Event Listeners ===
 rulesButton.addEventListener("click", () => (rulesModal.style.display = "block"));
 closeRules.addEventListener("click", () => (rulesModal.style.display = "none"));
-// === UI elements ===
-const handDisplay = document.getElementById("hand-display");
-const playButton = document.getElementById("play-button");
-const playedArea = document.getElementById("played-cards");
-const bsButton = document.getElementById("bs-button");
-const bsResult = document.getElementById("bs-result");
-const nextButton = document.getElementById("next-button");
-// === Initialize and start the game ===
+// === Game Setup ===
 function setupGame() {
+    console.log("Hello setup");
     deck = new Deck();
     deck.shuffle();
-    // Deal hands to all players
     for (let i = 0; i < numPlayers; i++) {
         hands.push(new Hand());
     }
     deck.dealHands(numPlayers, hands);
+    skipEmptyHands();
     renderHand();
     maybeTriggerAITurn();
 }
-// === Renders the current player's hand on the screen ===
+// === Skip Players With No Cards ===
+function skipEmptyHands() {
+    console.log("Hello emptyHands");
+    let tries = 0;
+    while (hands[currentPlayer].hand.length === 0 && tries < numPlayers) {
+        currentPlayer = (currentPlayer + 1) % numPlayers;
+        tries++;
+    }
+}
+// check for end game
+function checkForGameEnd() {
+    console.log("Hello checkEndGame");
+    const playersWithCards = hands.filter(hand => hand.hand.length > 0);
+    if (playersWithCards.length <= 1) {
+        const remainingPlayerIndex = hands.findIndex(hand => hand.hand.length > 0);
+        const msg = playersWithCards.length === 1
+            ? `Game Over — Player ${remainingPlayerIndex} is the last one with cards!`
+            : `Game Over — No players have cards left!`;
+        gameStatus.textContent = msg;
+        alert(msg);
+        playButton.disabled = true;
+        bsButton.disabled = true;
+        nextButton.disabled = true;
+        return true;
+    }
+    return false;
+}
+// === Render Current Hand ===
 function renderHand() {
+    console.log("Hello render");
     handDisplay.innerHTML = "";
     const playerHand = hands[currentPlayer];
     const currentCardValue = CARD_VALUES[turnCount % CARD_VALUES.length];
     playerHand.hand.forEach((card, index) => {
-        const cardBtn = document.createElement("button");
-        cardBtn.className = `card ${card.color}`;
-        cardBtn.style.display = "inline-block";
-        cardBtn.dataset.index = index.toString();
-        cardBtn.textContent = card.toString();
-        // Card click selects/deselects
-        cardBtn.addEventListener("click", () => {
-            const isSelected = cardBtn.classList.toggle("selected");
-            // Limit selection to 4 cards
+        const btn = document.createElement("button");
+        btn.className = `card ${card.color}`;
+        btn.dataset.index = index.toString();
+        btn.textContent = card.toString();
+        btn.addEventListener("click", () => {
+            btn.classList.toggle("selected");
             const selected = handDisplay.querySelectorAll(".card.selected");
             const cards = handDisplay.querySelectorAll(".card");
             if (selected.length >= 4) {
@@ -64,109 +91,99 @@ function renderHand() {
                 cards.forEach(c => (c.disabled = false));
             }
         });
-        handDisplay.appendChild(cardBtn);
+        handDisplay.appendChild(btn);
     });
-    const status = document.getElementById("game-status");
-    status.textContent = `Player ${currentPlayer}'s turn — declare: ${currentCardValue}`;
+    gameStatus.textContent = `Player ${currentPlayer}'s turn — declare: ${currentCardValue}`;
 }
-// === When a player hits "Play" button ===
+// === Handle Play Button ===
 function handlePlay() {
+    console.log("Hello handlePlay");
+    console.log("handlePlay triggered");
     const selectedButtons = handDisplay.querySelectorAll(".card.selected");
     const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index));
     if (selectedIndices.length === 0) {
-        alert("Please select at least one card.");
-        return;
+        console.log("No cards selected!");
+        return alert("Select at least one card.");
     }
     lastPlayer = currentPlayer;
-    const playedCards = hands[currentPlayer].playCards(selectedIndices);
-    lastPlayedCards = playedCards;
-    // Store the declared value for BS checking later
+    lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
     lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
-    playedArea.innerHTML = `Player ${lastPlayer} declared ${playedCards.length} ${lastDeclaredValue}(s)`;
+    playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
     selectedButtons.forEach(btn => btn.classList.remove("selected"));
-    currentPlayer = (currentPlayer + 1) % numPlayers;
-    turnCount++;
     bsResult.textContent = "";
+    if (checkForGameEnd())
+        return;
+    currentPlayer = (currentPlayer + 1) % numPlayers;
+    skipEmptyHands();
+    turnCount++;
     renderHand();
     maybeTriggerAITurn();
 }
-// === Handles a BS call ===
+// === Handle BS Button ===
 function handleBS() {
+    console.log("Hello handleBS");
     if (lastPlayedCards.length === 0) {
-        bsResult.textContent = "No cards have been played yet!";
+        bsResult.textContent = "No cards to call BS on!";
         return;
+        if (checkForGameEnd())
+            return;
     }
-    // Check if any played card doesn't match the declared value
     const isLie = lastPlayedCards.some(card => card.value !== lastDeclaredValue);
     if (isLie) {
-        bsResult.textContent = `BS was correct! Player ${lastPlayer} picks up the cards.`;
         hands[lastPlayer].addCards(lastPlayedCards);
+        bsResult.textContent = `Correct! Player ${lastPlayer} picks up the cards.`;
     }
     else {
-        bsResult.textContent = `Wrong BS! Player ${currentPlayer} picks up the cards.`;
         hands[currentPlayer].addCards(lastPlayedCards);
+        bsResult.textContent = `Wrong! Player ${currentPlayer} picks up the cards.`;
     }
     lastPlayedCards = [];
     playedArea.textContent = "";
     currentPlayer = (currentPlayer + 1) % numPlayers;
+    skipEmptyHands();
     turnCount++;
     renderHand();
     maybeTriggerAITurn();
 }
-// === Manual "Next" button (skip turn) ===
-function handleNext() {
-    currentPlayer = (currentPlayer + 1) % numPlayers;
-    playedArea.textContent = "";
-    bsResult.textContent = "";
-    renderHand();
-    if (aiPlayers.has(currentPlayer)) {
-        setTimeout(() => {
-            aiTakeTurn();
-            maybeAIcallsBS();
-        }, 1000);
-    }
-}
-// === AI turn logic ===
+// === AI Turn ===
 function aiTakeTurn() {
-    const aiHand = hands[currentPlayer];
-    const currentCard = CARD_VALUES[turnCount % CARD_VALUES.length];
-    const playHonestly = Math.random() < 0.6;
-    const matchingCards = aiHand.hand.filter(card => card.value === currentCard);
-    let cardsToPlay = [];
-    // AI decides whether to lie
-    if (playHonestly && matchingCards.length > 0) {
-        cardsToPlay = matchingCards.slice(0, 4);
+    console.log("Hello aitakeover");
+    const hand = hands[currentPlayer];
+    const targetValue = CARD_VALUES[turnCount % CARD_VALUES.length];
+    const matching = hand.hand.filter(card => card.value === targetValue);
+    let toPlay;
+    if (Math.random() < 0.6 && matching.length > 0) {
+        toPlay = matching.slice(0, 4);
     }
     else {
-        cardsToPlay = aiHand.hand.slice(0, Math.min(3, aiHand.hand.length));
+        toPlay = hand.hand.slice(0, Math.min(3, hand.hand.length));
     }
-    const indices = cardsToPlay.map(card => aiHand.hand.indexOf(card));
-    const played = aiHand.playCards(indices);
-    lastPlayedCards = played;
+    const indices = toPlay.map(card => hand.hand.indexOf(card));
+    lastPlayedCards = hand.playCards(indices);
+    lastDeclaredValue = targetValue;
     lastPlayer = currentPlayer;
-    lastDeclaredValue = currentCard;
-    playedArea.innerHTML = `Player ${currentPlayer} (AI) declared ${played.length} ${lastDeclaredValue}(s)`;
+    playedArea.textContent = `AI Player ${currentPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
+    if (checkForGameEnd())
+        return;
     currentPlayer = (currentPlayer + 1) % numPlayers;
+    skipEmptyHands();
     turnCount++;
     renderHand();
-    setTimeout(() => {
-        if (aiPlayers.has(currentPlayer)) {
-            maybeAIcallsBS();
-            setTimeout(() => aiTakeTurn(), 1000);
-        }
-    }, 1000);
+    maybeTriggerAITurn();
 }
-// === AI randomly decides to call BS ===
+// === AI May Call BS ===
 function maybeAIcallsBS() {
+    console.log("Hello maybeAI");
     const challenger = currentPlayer;
-    const target = (currentPlayer - 1 + numPlayers) % numPlayers;
+    const target = (challenger - 1 + numPlayers) % numPlayers;
     if (lastPlayedCards.length > 0 && aiPlayers.has(challenger) && Math.random() < 0.3) {
         bsResult.textContent = `AI Player ${challenger} calls BS on Player ${target}!`;
         handleBS();
     }
 }
-// === Checks if AI should go next ===
+// === Trigger AI Turn If Needed ===
 function maybeTriggerAITurn() {
+    console.log("Hello maybeTrigger");
     if (aiPlayers.has(currentPlayer)) {
         setTimeout(() => {
             maybeAIcallsBS();
@@ -174,7 +191,17 @@ function maybeTriggerAITurn() {
         }, 1000);
     }
 }
-// === Start the game and wire up controls ===
+// === Handle Next Button ===
+function handleNext() {
+    console.log("Hello handleNext");
+    currentPlayer = (currentPlayer + 1) % numPlayers;
+    skipEmptyHands();
+    playedArea.textContent = "";
+    bsResult.textContent = "";
+    renderHand();
+    maybeTriggerAITurn();
+}
+// === Start Game ===
 setupGame();
 playButton.addEventListener("click", handlePlay);
 bsButton.addEventListener("click", handleBS);
