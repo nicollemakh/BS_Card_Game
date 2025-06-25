@@ -82,15 +82,6 @@ function renderHand() {
 
 // === Handle Play Button ===
 function handlePlay() {
-  const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
-  const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
-  if (selectedIndices.length === 0) return alert("Select at least one card.");
-
-  lastPlayer = currentPlayer;
-  lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
-  lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
-  playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
-
   // Check winner before moving to next player
   if (hands[currentPlayer].hand.length === 1) {
     alert(`Player ${currentPlayer} wins! 🎉`);
@@ -100,6 +91,16 @@ function handlePlay() {
     gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉`;
     return;
   }
+  const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
+  const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
+  if (selectedIndices.length === 0) return alert("Select at least one card.");
+
+  lastPlayer = currentPlayer;
+  lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
+  lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
+  playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
+
+  
 
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
   bsResult.textContent = "";
