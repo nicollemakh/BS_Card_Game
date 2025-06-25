@@ -7,13 +7,13 @@ import { CARD_VALUES } from "./constants.js";
 let turnCount = 0;                    // Tracks current turn number (used to cycle declared values)
 const numPlayers = 4;                // Total number of players
 const hands: Hand[] = [];            // Array of player hands
-const aiPlayers = new Set([1]);      // Set of AI player indices
+const aiPlayers = new Set([1]);      // Set of AI player indices (only player 1 is AI)
 
 let deck: Deck;
 let currentPlayer = 0;               // Index of player whose turn it is
 let lastPlayedCards: Card[] = [];   // Stores last played cards (to check for BS)
-let lastPlayer = -1;                // Player who just played
-let lastDeclaredValue = "";         // What the last player claimed they played
+let lastPlayer = -1;                 // Player who just played
+let lastDeclaredValue = "";          // What the last player claimed they played
 
 // === Rule modal elements ===
 const rulesButton = document.getElementById("rules-button")!;
@@ -43,10 +43,10 @@ function setupGame() {
   deck.dealHands(numPlayers, hands);
 
   renderHand();
-  maybeTriggerAITurn(); 
+  maybeTriggerAITurn();
 }
 
-// === Renders the current player's hand on the screen ===
+// === Render the current player's hand on the screen ===
 function renderHand() {
   handDisplay.innerHTML = "";
   const playerHand = hands[currentPlayer];
@@ -63,7 +63,7 @@ function renderHand() {
     cardBtn.addEventListener("click", () => {
       const isSelected = cardBtn.classList.toggle("selected");
 
-      // Limit selection to 4 cards
+      // Limit selection to 4 cards max
       const selected = handDisplay.querySelectorAll(".card.selected");
       const cards = handDisplay.querySelectorAll(".card");
 
@@ -85,7 +85,7 @@ function renderHand() {
   status.textContent = `Player ${currentPlayer}'s turn — declare: ${currentCardValue}`;
 }
 
-// === When a player hits "Play" button ===
+// === When a player hits the "Play" button ===
 function handlePlay() {
   const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
   const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
@@ -99,24 +99,24 @@ function handlePlay() {
   const playedCards = hands[currentPlayer].playCards(selectedIndices);
   lastPlayedCards = playedCards;
 
-  // Check for winner and end game if found
-  if (checkWinner()) {
-    return;
-  }
-
+  // Store the declared value for BS checking later
   lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
+
   playedArea.innerHTML = `Player ${lastPlayer} declared ${playedCards.length} ${lastDeclaredValue}(s)`;
 
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
+
+  // Check if current player has won after playing cards
+  if (checkWinner()) return;
 
   currentPlayer = (currentPlayer + 1) % numPlayers;
   turnCount++;
   bsResult.textContent = "";
   renderHand();
-  maybeTriggerAITurn(); 
+  maybeTriggerAITurn();
 }
 
-// === Handles a BS call ===
+// === Handle when a player calls BS ===
 function handleBS() {
   if (lastPlayedCards.length === 0) {
     bsResult.textContent = "No cards have been played yet!";
@@ -137,11 +137,14 @@ function handleBS() {
   lastPlayedCards = [];
   playedArea.textContent = "";
 
+  // Check if any player has won after picking cards
+  if (checkWinner()) return;
+
   currentPlayer = (currentPlayer + 1) % numPlayers;
   turnCount++;
 
   renderHand();
-  maybeTriggerAITurn(); 
+  maybeTriggerAITurn();
 }
 
 // === Manual "Next" button (skip turn) ===
@@ -153,14 +156,14 @@ function handleNext() {
 
   if (aiPlayers.has(currentPlayer)) {
     setTimeout(() => {
-      aiTakeTurn();
-      maybeAIcallsBS();
+      aiTakeTurn(currentPlayer);
+      maybeAIcallsBS(currentPlayer);
     }, 1000);
   }
 }
 
-// === AI turn logic ===
-function aiTakeTurn() {
+// === AI turn logic, receives the AI player index ===
+function aiTakeTurn(player: number) {
   const aiHand = hands[player];
   const currentCard = CARD_VALUES[turnCount % CARD_VALUES.length];
 
@@ -182,7 +185,10 @@ function aiTakeTurn() {
 
   playedArea.innerHTML = `Player ${player} (AI) declared ${played.length} ${lastDeclaredValue}(s)`;
 
-  // Update currentPlayer and turnCount here only after the AI turn ends:
+  // Check if AI player won after playing cards
+  if (checkWinner()) return;
+
+  // Update currentPlayer and turnCount only if this AI is the current player
   if (player === currentPlayer) {
     currentPlayer = (currentPlayer + 1) % numPlayers;
     turnCount++;
@@ -190,6 +196,7 @@ function aiTakeTurn() {
 
   renderHand();
 
+  // Schedule next AI turn if next player is AI
   setTimeout(() => {
     if (aiPlayers.has(currentPlayer)) {
       maybeAIcallsBS(currentPlayer);
@@ -198,18 +205,20 @@ function aiTakeTurn() {
   }, 1000);
 }
 
-// === AI randomly decides to call BS ===
-function maybeAIcallsBS() {
-  const challenger = player;
+// === AI randomly decides to call BS, challenger is the AI player ===
+function maybeAIcallsBS(challenger: number) {
   const target = (challenger - 1 + numPlayers) % numPlayers;
 
   if (lastPlayedCards.length > 0 && aiPlayers.has(challenger) && Math.random() < 0.3) {
     bsResult.textContent = `AI Player ${challenger} calls BS on Player ${target}!`;
     handleBS();
+
+    // Check if game ended after BS call
+    if (checkWinner()) return;
   }
 }
 
-// === Checks if AI should go next ===
+// === Check if current player is AI and trigger AI turn ===
 function maybeTriggerAITurn() {
   if (aiPlayers.has(currentPlayer)) {
     const playerAtCall = currentPlayer; // lock current player index here
@@ -221,18 +230,25 @@ function maybeTriggerAITurn() {
     }, 1000);
   }
 }
-// === Check's if Someone Won ===
+
+// === Check if any player has emptied their hand (winner) ===
 function checkWinner(): boolean {
   for (let i = 0; i < numPlayers; i++) {
     if (hands[i].hand.length === 0) {
       alert(`Player ${i} wins! 🎉`);
-      
-      // Disable buttons to end game
+
+      // Disable buttons to prevent further play
       playButton.disabled = true;
       bsButton.disabled = true;
       nextButton.disabled = true;
-      
-      return true;  // winner found
+
+      // Optional: Clear UI to indicate game over
+      playedArea.textContent = "";
+      bsResult.textContent = "";
+      const status = document.getElementById("game-status")!;
+      status.textContent = `Game Over — Player ${i} wins! 🎉`;
+
+      return true; // winner found, stop game
     }
   }
   return false; // no winner yet
