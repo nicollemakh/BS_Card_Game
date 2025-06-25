@@ -99,9 +99,12 @@ function handlePlay() {
   const playedCards = hands[currentPlayer].playCards(selectedIndices);
   lastPlayedCards = playedCards;
 
-  // Store the declared value for BS checking later
-  lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
+  // Check if current player has emptied their hand — if yes, announce winner and stop
+  if (checkWinner()) {
+    return;
+  }
 
+  lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
   playedArea.innerHTML = `Player ${lastPlayer} declared ${playedCards.length} ${lastDeclaredValue}(s)`;
 
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
@@ -217,6 +220,17 @@ function maybeTriggerAITurn() {
       }, 1000);
     }, 1000);
   }
+}
+// === Check's if Someone Won ===
+function checkWinner() {
+  for (let i = 0; i < numPlayers; i++) {
+    if (hands[i].hand.length === 0) {
+      alert(`Player ${i} wins! 🎉`);
+      // Optionally reset or stop the game here
+      return true;
+    }
+  }
+  return false;
 }
 
 // === Start the game and wire up controls ===
