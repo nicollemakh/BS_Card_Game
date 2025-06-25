@@ -1,3 +1,4 @@
+console.log("🎮 BS Game script loaded");
 // === Imports ===
 import { Card } from "./Card.js";
 import { Hand } from "./Hand.js";
