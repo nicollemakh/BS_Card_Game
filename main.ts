@@ -91,12 +91,21 @@ function handlePlay() {
   lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
   playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
+  // === WIN CHECK: Immediately after playing cards ===
+  if (hands[currentPlayer].hand.length === 0) {
+    alert(`Player ${currentPlayer} wins! 🎉`);
+    playButton.disabled = true;
+    bsButton.disabled = true;
+    nextButton.disabled = true;
+    gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉`;
+    return;
+  }
+
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
-  if (checkWinner()) return;
+  bsResult.textContent = "";
 
   currentPlayer = (currentPlayer + 1) % numPlayers;
   turnCount++;
-  bsResult.textContent = "";
   renderHand();
   maybeTriggerAITurn();
 }
@@ -119,6 +128,7 @@ function handleBS() {
 
   lastPlayedCards = [];
   playedArea.textContent = "";
+
   if (checkWinner()) return;
 
   currentPlayer = (currentPlayer + 1) % numPlayers;
@@ -147,7 +157,15 @@ function aiTakeTurn() {
 
   playedArea.textContent = `AI Player ${currentPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
-  if (checkWinner()) return;
+  // === WIN CHECK: Immediately after AI plays cards ===
+  if (hand.hand.length === 0) {
+    alert(`Player ${currentPlayer} wins! 🎉`);
+    playButton.disabled = true;
+    bsButton.disabled = true;
+    nextButton.disabled = true;
+    gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉`;
+    return;
+  }
 
   currentPlayer = (currentPlayer + 1) % numPlayers;
   turnCount++;
