@@ -19,6 +19,7 @@ let lastDeclaredValue = "";
 // === UI Elements ===
 const handDisplay = document.getElementById("hand-display")!;
 const playButton = document.getElementById("play-button")!;
+console.log("playButton is:", playButton);
 const bsButton = document.getElementById("bs-button")!;
 const nextButton = document.getElementById("next-button")!;
 const playedArea = document.getElementById("played-cards")!;
