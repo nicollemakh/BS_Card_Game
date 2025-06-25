@@ -92,7 +92,7 @@ function handlePlay() {
   playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
   // Check winner before moving to next player
-  if (hands[currentPlayer].hand.length === 0) {
+  if (hands[currentPlayer].hand.length === 1) {
     alert(`Player ${currentPlayer} wins! 🎉`);
     playButton.disabled = true;
     bsButton.disabled = true;
