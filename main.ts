@@ -55,7 +55,25 @@ function skipEmptyHands() {
     tries++;
   }
 }
+// check for end game
+function checkForGameEnd(): boolean {
+  const playersWithCards = hands.filter(hand => hand.hand.length > 0);
+  if (playersWithCards.length <= 1) {
+    const remainingPlayerIndex = hands.findIndex(hand => hand.hand.length > 0);
+    const msg = playersWithCards.length === 1
+      ? `Game Over — Player ${remainingPlayerIndex} is the last one with cards!`
+      : `Game Over — No players have cards left!`;
 
+    gameStatus.textContent = msg;
+    alert(msg);
+
+    playButton.disabled = true;
+    bsButton.disabled = true;
+    nextButton.disabled = true;
+    return true;
+  }
+  return false;
+}
 // === Render Current Hand ===
 function renderHand() {
   handDisplay.innerHTML = "";
@@ -96,26 +114,26 @@ function handlePlay() {
 
   const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
   const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
-  console.log("Selected indices:", selectedIndices);
+  
 
   if (selectedIndices.length === 0) {
     console.log("No cards selected!");
     return alert("Select at least one card.");
   }
 
-  console.log("Hand before play:", hands[currentPlayer].hand.map(c => c.toString()));
+
 
   lastPlayer = currentPlayer;
   lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
 
-  console.log("Hand after play:", hands[currentPlayer].hand.map(c => c.toString()));
 
   lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
   playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
 
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
   bsResult.textContent = "";
-
+  
+  if (checkForGameEnd()) return;
   currentPlayer = (currentPlayer + 1) % numPlayers;
   skipEmptyHands();
   turnCount++;
@@ -128,6 +146,7 @@ function handleBS() {
   if (lastPlayedCards.length === 0) {
     bsResult.textContent = "No cards to call BS on!";
     return;
+  if (checkForGameEnd()) return;
   }
 
   const isLie = lastPlayedCards.some(card => card.value !== lastDeclaredValue);
@@ -169,7 +188,7 @@ function aiTakeTurn() {
   lastPlayer = currentPlayer;
 
   playedArea.textContent = `AI Player ${currentPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
-
+  if (checkForGameEnd()) return;
   currentPlayer = (currentPlayer + 1) % numPlayers;
   skipEmptyHands();
   turnCount++;
