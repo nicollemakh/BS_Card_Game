@@ -18,17 +18,24 @@ export class Hand {
   }
 
   // Removes and returns multiple cards by their indices
- playCards(indices: number[]): Card[] {
-  // Sort indices descending so removal won't shift positions of remaining cards
-  const sortedIndices = [...indices].sort((a, b) => b - a);
+playCards(indices: number[]): Card[] {
+  console.log("playCards called with indices:", indices);
   const playing: Card[] = [];
+  const remaining: Card[] = [];
 
-  for (const index of sortedIndices) {
-    playing.push(this.hand.splice(index, 1)[0]);
-  }
+  this.hand.forEach((card, i) => {
+    if (indices.includes(i)) {
+      console.log(`Removing card at index ${i}: ${card.toString()}`);
+      playing.push(card);
+    } else {
+      remaining.push(card);
+    }
+  });
 
-  // Reverse to keep original order if needed
-  return playing.reverse();
+  this.hand = remaining;
+
+  console.log("Hand after removal:", this.hand.map(c => c.toString()));
+  return playing;
 }
 
   // For debugging: shows hand with card indices
