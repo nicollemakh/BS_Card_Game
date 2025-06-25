@@ -82,25 +82,41 @@ function renderHand() {
 
 // === Handle Play Button ===
 function handlePlay() {
-  // Check winner before moving to next player
-  if (hands[currentPlayer].hand.length === 1) {
+  console.log("handlePlay triggered");
+
+  // 1. Log which cards are selected by the user (indices)
+  const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
+  const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
+  console.log("Selected indices:", selectedIndices);
+
+  if (selectedIndices.length === 0) {
+    console.log("No cards selected!");
+    return alert("Select at least one card.");
+  }
+
+  // 2. Before playing cards, log current hand for this player
+  console.log("Hand before play:", hands[currentPlayer].hand.map(c => c.toString()));
+
+  // 3. Remove cards from hand
+  lastPlayer = currentPlayer;
+  lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
+
+  // 4. After playing cards, log updated hand to confirm removal
+  console.log("Hand after play:", hands[currentPlayer].hand.map(c => c.toString()));
+
+  lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
+  playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
+
+  // 5. Check if player has emptied their hand and won
+  if (hands[currentPlayer].hand.length === 0) {
+    console.log(`Player ${currentPlayer} wins!`);
+    gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉 (alert replaced)`;
     alert(`Player ${currentPlayer} wins! 🎉`);
     playButton.disabled = true;
     bsButton.disabled = true;
     nextButton.disabled = true;
-    gameStatus.textContent = `Game Over — Player ${currentPlayer} wins! 🎉`;
     return;
   }
-  const selectedButtons = handDisplay.querySelectorAll<HTMLButtonElement>(".card.selected");
-  const selectedIndices = Array.from(selectedButtons).map(btn => parseInt(btn.dataset.index!));
-  if (selectedIndices.length === 0) return alert("Select at least one card.");
-
-  lastPlayer = currentPlayer;
-  lastPlayedCards = hands[currentPlayer].playCards(selectedIndices);
-  lastDeclaredValue = CARD_VALUES[turnCount % CARD_VALUES.length];
-  playedArea.textContent = `Player ${lastPlayer} declared ${lastPlayedCards.length} ${lastDeclaredValue}(s)`;
-
-  
 
   selectedButtons.forEach(btn => btn.classList.remove("selected"));
   bsResult.textContent = "";
