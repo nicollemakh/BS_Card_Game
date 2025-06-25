@@ -8,6 +8,9 @@ export class Hand {
   addCard(card: Card): void {
     this.hand.push(card);
   }
+  addCards(cards: Card[]): void {
+  cards.forEach(card => this.addCard(card));
+  }
 
   // Removes and returns a single card at a given index
   playCard(index: number): Card {
